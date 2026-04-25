@@ -98,118 +98,139 @@
 
     <button id="btn-siguiente" onclick="siguienteNivel()">¡Siguiente Nivel! ➔</button>
 
-    <script>
-       const nivelesOriginales = [
-            { id: 1, items: [
-                { id: 'dulce', txt: 'dulce', img: 'dulce.png' },
-                { id: 'sucio', txt: 'sucio', img: 'sucio.png' },
-                { id: 'agil', txt: 'ágil', img: 'agil.jpg' }
-            ]},
-            { id: 2, items: [
-                { id: 'fragil', txt: 'frágil', img: 'fragil.png' },
-                { id: 'magico', txt: 'mágico', img: 'magico.png' },
-                { id: 'caro', txt: 'caro', img: 'caro.jpg' }
-            ]},
-            { id: 3, items: [
-                { id: 'enredado', txt: 'enredado', img: 'enredado.png' },
-                { id: 'honrado', txt: 'honrado', img: 'honrado.png' },
-                { id: 'rosado', txt: 'rosado', img: 'rosado.jpg' }
-            ]},
-            { id: 4, items: [
-                { id: 'mentiroso', txt: 'mentiroso', img: 'mentiroso.png' },
-                { id: 'pequeno', txt: 'pequeño', img: 'pequeno.jpg' },
-                { id: 'aburrida', txt: 'aburrida', img: 'aburrida.jpg' }
-            ]},
-            { id: 5, items: [
-                { id: 'urgente', txt: 'urgente', img: 'urgente.jpg' },
-                { id: 'inquieto', txt: 'inquieto', img: 'inquieto.jpg' },
-                { id: 'claro', txt: 'claro', img: 'claro.png' }
-            ]}
-        ];
+<script>
+    // --- LISTA COMPLETA DE TUS PALABRAS Y ARCHIVOS ---
+    const nivelesOriginales = [
+        { id: 1, items: [
+            { id: 'dulce', txt: 'dulce', img: 'dulce.png' },
+            { id: 'sucio', txt: 'sucio', img: 'sucio.png' },
+            { id: 'agil', txt: 'ágil', img: 'agil.jpg' }
+        ]},
+        { id: 2, items: [
+            { id: 'fragil', txt: 'frágil', img: 'fragil.png' },
+            { id: 'magico', txt: 'mágico', img: 'magico.png' },
+            { id: 'caro', txt: 'caro', img: 'caro.jpg' }
+        ]},
+        { id: 3, items: [
+            { id: 'enredado', txt: 'enredado', img: 'enredado.png' },
+            { id: 'honrado', txt: 'honrado', img: 'honrado.png' },
+            { id: 'rosado', txt: 'rosado', img: 'rosado.jpg' }
+        ]},
+        { id: 4, items: [
+            { id: 'mentiroso', txt: 'mentiroso', img: 'mentiroso.png' },
+            { id: 'pequeno', txt: 'pequeño', img: 'pequeno.jpg' },
+            { id: 'aburrida', txt: 'aburrida', img: 'aburrida.jpg' }
+        ]},
+        { id: 5, items: [
+            { id: 'urgente', txt: 'urgente', img: 'urgente.jpg' },
+            { id: 'inquieto', txt: 'inquieto', img: 'inquieto.jpg' },
+            { id: 'claro', txt: 'claro', img: 'claro.png' }
+        ]}
+    ];
 
-        // Función para desordenar cualquier array (Algoritmo Fisher-Yates)
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+    // --- FUNCIÓN DE MEZCLA (Fisher-Yates) ---
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // --- INICIALIZACIÓN DEL JUEGO ---
+    // Desordenamos los niveles completos al iniciar
+    let niveles = shuffle([...nivelesOriginales]);
+    let nivelActual = 0;
+    let aciertosNivel = 0;
+
+    function cargarNivel() {
+        const contPalabras = document.getElementById('contenedor-palabras');
+        const contImagenes = document.getElementById('contenedor-imagenes');
+        const btn = document.getElementById('btn-siguiente');
+        
+        // Limpiamos los contenedores
+        contPalabras.innerHTML = '';
+        contImagenes.innerHTML = '';
+        btn.style.display = 'none';
+        aciertosNivel = 0;
+
+        const datos = niveles[nivelActual];
+        // Actualizamos el contador de nivel para la pizarra
+        document.getElementById('info-nivel').innerText = `Desafío ${nivelActual + 1} de ${niveles.length}`;
+
+        // === 1. IMÁGENES: CREAR Y MEZCLAR ===
+        // Creamos una copia de los items y los desordenamos
+        const itemsParaImagenes = shuffle([...datos.items]);
+        
+        itemsParaImagenes.forEach(item => {
+            const z = document.createElement('div');
+            z.className = 'zona-destino';
+            z.id = `z-${item.id}`;
+            // Mantenemos la estructura visual para la pizarra
+            z.innerHTML = `<img src="${item.img}" alt="imagen"><span>Suelta aquí</span>`;
+            // Agregamos los eventos de Drag & Drop
+            z.ondragover = e => e.preventDefault();
+            z.ondrop = soltar;
+            contImagenes.appendChild(z);
+        });
+
+        // === 2. PALABRAS: CREAR Y MEZCLAR (Independiente) ===
+        // Volvemos a desordenar los items, esta vez para las palabras
+        const itemsParaPalabras = shuffle([...datos.items]);
+        
+        itemsParaPalabras.forEach(item => {
+            const d = document.createElement('div');
+            d.className = 'palabra';
+            d.draggable = true;
+            d.id = `p-${item.id}`;
+            d.innerText = item.txt;
+            // Estilo visual más grande definido en el CSS anterior
+            d.addEventListener('dragstart', e => e.dataTransfer.setData("text", e.target.id));
+            contPalabras.appendChild(d);
+        });
+    }
+
+    // --- LÓGICA DE SOLTAR (DROP) ---
+    function soltar(ev) {
+        ev.preventDefault();
+        // Obtenemos los IDs sin el prefijo 'p-' o 'z-'
+        const idPalabra = ev.dataTransfer.getData("text").replace('p-', '');
+        const idZona = ev.currentTarget.id.replace('z-', '');
+
+        // Validación de acierto
+        if (idPalabra === idZona) {
+            // Buscamos los datos completos de la palabra acertada
+            const item = niveles[nivelActual].items.find(i => i.id === idPalabra);
+            // Reemplazamos el contenido de la zona por la palabra y su imagen
+            ev.currentTarget.innerHTML = `<img src="${item.img}" style="width:85%"><br><b style="font-size:1.4rem; color:#27ae60">${item.txt}</b>`;
+            ev.currentTarget.classList.add('correcta');
+            // Ocultamos el botón de la palabra original
+            document.getElementById(`p-${idPalabra}`).style.visibility = 'hidden';
+            aciertosNivel++;
+
+            // Si se completaron las 3 palabras del nivel
+            if (aciertosNivel === 3) {
+                document.getElementById('btn-siguiente').style.display = 'block';
             }
-            return array;
         }
+    }
 
-        // Desordenamos el orden de los niveles al empezar
-        let niveles = shuffle([...nivelesOriginales]);
-        let nivelActual = 0;
-        let aciertosNivel = 0;
-
-        function cargarNivel() {
-            const contPalabras = document.getElementById('contenedor-palabras');
-            const contImagenes = document.getElementById('contenedor-imagenes');
-            const btn = document.getElementById('btn-siguiente');
-            
-            contPalabras.innerHTML = '';
-            contImagenes.innerHTML = '';
-            btn.style.display = 'none';
-            aciertosNivel = 0;
-
-            const datos = niveles[nivelActual];
-            document.getElementById('info-nivel').innerText = `Desafío ${nivelActual + 1} de ${niveles.length}`;
-
-            // 1. Creamos las zonas de imágenes y las desordenamos
-            const itemsImagenes = shuffle([...datos.items]);
-            itemsImagenes.forEach(item => {
-                const z = document.createElement('div');
-                z.className = 'zona-destino';
-                z.id = `z-${item.id}`;
-                z.innerHTML = `<img src="${item.img}" alt="imagen"><span>Suelta aquí</span>`;
-                z.ondragover = e => e.preventDefault();
-                z.ondrop = soltar;
-                contImagenes.appendChild(z);
-            });
-
-            // 2. Creamos las palabras y también las desordenamos de forma independiente
-            const itemsPalabras = shuffle([...datos.items]);
-            itemsPalabras.forEach(item => {
-                const d = document.createElement('div');
-                d.className = 'palabra';
-                d.draggable = true;
-                d.id = `p-${item.id}`;
-                d.innerText = item.txt;
-                d.addEventListener('dragstart', e => e.dataTransfer.setData("text", e.target.id));
-                contPalabras.appendChild(d);
-            });
+    // --- CAMBIO DE NIVEL ---
+    function siguienteNivel() {
+        nivelActual++;
+        if (nivelActual < niveles.length) {
+            cargarNivel();
+        } else {
+            // Mensaje final personalizado
+            document.getElementById('titulo').innerText = "¡Misión Cumplida!";
+            document.getElementById('info-nivel').innerText = "¡Completaste todos los niveles!";
+            document.getElementById('contenedor-juego').innerHTML = "<h2>🎉 ¡Excelente trabajo!</h2>";
+            document.getElementById('btn-siguiente').style.display = 'none';
         }
+    }
 
-        function soltar(ev) {
-            ev.preventDefault();
-            const idPalabra = ev.dataTransfer.getData("text").replace('p-', '');
-            const idZona = ev.currentTarget.id.replace('z-', '');
-
-            if (idPalabra === idZona) {
-                const item = niveles[nivelActual].items.find(i => i.id === idPalabra);
-                ev.currentTarget.innerHTML = `<img src="${item.img}" style="width:85%"><br><b style="font-size:1.4rem; color:#27ae60">${item.txt}</b>`;
-                ev.currentTarget.classList.add('correcta');
-                document.getElementById(`p-${idPalabra}`).style.visibility = 'hidden';
-                aciertosNivel++;
-
-                if (aciertosNivel === 3) {
-                    document.getElementById('btn-siguiente').style.display = 'block';
-                }
-            }
-        }
-
-        function siguienteNivel() {
-            nivelActual++;
-            if (nivelActual < niveles.length) {
-                cargarNivel();
-            } else {
-                document.getElementById('titulo').innerText = "¡Misión Cumplida!";
-                document.getElementById('info-nivel').innerText = "¡Eres un experto en vocabulario!";
-                document.getElementById('contenedor-juego').innerHTML = "<h2>🎉 ¡Felicidades a todo el 4° B!</h2>";
-                document.getElementById('btn-siguiente').style.display = 'none';
-            }
-        }
-
-        cargarNivel();
-    </script>
+    // --- INICIO AUTOMÁTICO ---
+    cargarNivel();
+</script>
 </body>
 </html>
