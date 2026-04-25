@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Vocabulario 4° B - Pizarra Interactiva</title>
+    <style>
+        :root { --primary: #4a90e2; --success: #2ecc71; --bg: #ffffff; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; 
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        h1 { color: #2c3e50; margin: 10px 0; font-size: 2rem; }
+        
+        /* Contenedor principal horizontal */
+        .contenedor-juego { 
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* Filas para aprovechar el ancho de la pizarra */
+        .fila { 
+            display: flex; 
+            justify-content: center; 
+            gap: 20px; 
+            width: 100%; 
+            flex-wrap: nowrap;
+        }
+
+        .palabra { 
+            padding: 25px; 
+            background: var(--primary); 
+            color: white; 
+            border-radius: 12px; 
+            cursor: grab; 
+            font-weight: bold; 
+            font-size: 1.5rem; /* Letra más grande para la pizarra */
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .zona-destino { 
+            width: 280px; /* Imágenes mucho más grandes */
+            height: 280px; 
+            border: 4px dashed #d1d8e0; 
+            border-radius: 20px; 
+            background: #fdfdfd; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            position: relative;
+        }
+
+        .zona-destino img { 
+            width: 90%; 
+            height: 80%; 
+            object-fit: contain; 
+        }
+
+        .zona-destino span { font-size: 0.9rem; color: #7f8c8d; position: absolute; bottom: 5px; }
+
+        .correcta { 
+            background-color: #eafaf1 !important; 
+            border: 5px solid var(--success) !important; 
+        }
+
+        #btn-siguiente { 
+            display: none; 
+            margin: 20px auto; 
+            padding: 20px 40px; 
+            background-color: var(--success); 
+            color: white; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 1.8rem; 
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(46, 204, 113, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="titulo">¡Une la palabra con su imagen!</h1>
+    <div id="info-nivel" style="font-size: 1.5rem; font-weight: bold; color: var(--primary); margin-bottom: 15px;">Nivel 1</div>
+
+    <div class="contenedor-juego">
+        <div class="fila" id="contenedor-imagenes"></div>
+        
+        <div class="fila" id="contenedor-palabras"></div>
+    </div>
+
+    <button id="btn-siguiente" onclick="siguienteNivel()">¡Siguiente Nivel! ➔</button>
+
+    <script>
+        const niveles = [
+            { id: 1, items: [
+                { id: 'dulce', txt: 'dulce', img: 'dulce.png' },
+                { id: 'sucio', txt: 'sucio', img: 'sucio.png' },
+                { id: 'agil', txt: 'ágil', img: 'agil.jpg' }
+            ]},
+            { id: 2, items: [
+                { id: 'fragil', txt: 'frágil', img: 'fragil.png' },
+                { id: 'magico', txt: 'mágico', img: 'magico.png' },
+                { id: 'caro', txt: 'caro', img: 'caro.jpg' }
+            ]},
+            { id: 3, items: [
+                { id: 'enredado', txt: 'enredado', img: 'enredado.png' },
+                { id: 'honrado', txt: 'honrado', img: 'honrado.png' },
+                { id: 'rosado', txt: 'rosado', img: 'rosado.jpg' }
+            ]},
+            { id: 4, items: [
+                { id: 'mentiroso', txt: 'mentiroso', img: 'mentiroso.png' },
+                { id: 'pequeno', txt: 'pequeño', img: 'pequeno.jpg' },
+                { id: 'aburrida', txt: 'aburrida', img: 'aburrida.jpg' }
+            ]},
+            { id: 5, items: [
+                { id: 'urgente', txt: 'urgente', img: 'urgente.jpg' },
+                { id: 'inquieto', txt: 'inquieto', img: 'inquieto.jpg' },
+                { id: 'claro', txt: 'claro', img: 'claro.png' }
+            ]}
+        ];
+
+        let nivelActual = 0;
+        let aciertosNivel = 0;
+
+        function cargarNivel() {
+            const contPalabras = document.getElementById('contenedor-palabras');
+            const contImagenes = document.getElementById('contenedor-imagenes');
+            const btn = document.getElementById('btn-siguiente');
+            
+            contPalabras.innerHTML = '';
+            contImagenes.innerHTML = '';
+            btn.style.display = 'none';
+            aciertosNivel = 0;
+
+            const datos = niveles[nivelActual];
+            document.getElementById('info-nivel').innerText = `Nivel ${datos.id}`;
+
+            // Imágenes arriba
+            datos.items.forEach(item => {
+                const z = document.createElement('div');
+                z.className = 'zona-destino';
+                z.id = `z-${item.id}`;
+                z.innerHTML = `<img src="${item.img}" alt="${item.txt}"><span>Suelta aquí</span>`;
+                z.ondragover = e => e.preventDefault();
+                z.ondrop = soltar;
+                contImagenes.appendChild(z);
+            });
+
+            // Palabras abajo (mezcladas)
+            [...datos.items].sort(() => Math.random() - 0.5).forEach(item => {
+                const d = document.createElement('div');
+                d.className = 'palabra';
+                d.draggable = true;
+                d.id = `p-${item.id}`;
+                d.innerText = item.txt;
+                d.addEventListener('dragstart', e => e.dataTransfer.setData("text", e.target.id));
+                contPalabras.appendChild(d);
+            });
+        }
+
+        function soltar(ev) {
+            ev.preventDefault();
+            const idPalabra = ev.dataTransfer.getData("text").replace('p-', '');
+            const idZona = ev.currentTarget.id.replace('z-', '');
+
+            if (idPalabra === idZona) {
+                const item = niveles[nivelActual].items.find(i => i.id === idPalabra);
+                ev.currentTarget.innerHTML = `<img src="${item.img}" style="width:85%"><br><b style="font-size:1.4rem; color:#27ae60">${item.txt}</b>`;
+                ev.currentTarget.classList.add('correcta');
+                document.getElementById(`p-${idPalabra}`).style.visibility = 'hidden';
+                aciertosNivel++;
+
+                if (aciertosNivel === 3) {
+                    document.getElementById('btn-siguiente').style.display = 'block';
+                }
+            }
+        }
+
+        function siguienteNivel() {
+            nivelActual++;
+            if (nivelActual < niveles.length) {
+                cargarNivel();
+            } else {
+                document.getElementById('titulo').innerText = "¡Misión Cumplida!";
+                document.getElementById('info-nivel').innerText = "¡Completaste todos los niveles!";
+                document.getElementById('contenedor-juego').innerHTML = "<h2>🎉 ¡Excelente trabajo!</h2>";
+                document.getElementById('btn-siguiente').style.display = 'none';
+            }
+        }
+
+        cargarNivel();
+    </script>
+</body>
+</html>
